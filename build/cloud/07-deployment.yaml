@@ -36,8 +36,8 @@ spec:
         volumeMounts:
         - name: conf
           mountPath: /etc/kubeedge/config
-        - name: certs
-          mountPath: /etc/kubeedge
+        # - name: certs
+        #   mountPath: /etc/kubeedge
       restartPolicy: Always
       serviceAccount: cloudcore
       serviceAccountName: cloudcore
@@ -45,13 +45,13 @@ spec:
       - name: conf
         configMap:
           name: cloudcore
-      - name: certs
-        secret:
-          secretName: cloudcore
-          items:
-          - key: edge.crt
-            path: certs/edge.crt
-          - key: edge.key
-            path: certs/edge.key
-          - key: rootCA.crt
-            path: ca/rootCA.crt
+      # - name: certs
+      #   secret:
+      #     secretName: cloudcore
+      #     items:
+      #     - key: edge.crt
+      #       path: certs/edge.crt
+      #     - key: edge.key
+      #       path: certs/edge.key
+      #     - key: rootCA.crt
+      #       path: ca/rootCA.crt
