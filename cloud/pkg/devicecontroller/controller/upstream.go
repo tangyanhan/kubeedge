@@ -17,6 +17,7 @@ limitations under the License.
 package controller
 
 import (
+	"context"
 	"encoding/json"
 	"strconv"
 
@@ -25,7 +26,8 @@ import (
 
 	beehiveContext "github.com/kubeedge/beehive/pkg/core/context"
 	"github.com/kubeedge/beehive/pkg/core/model"
-	"github.com/kubeedge/kubeedge/cloud/pkg/apis/devices/v1alpha1"
+	"github.com/kubeedge/kubeedge/cloud/pkg/apis/devices/v1alpha2"
+	"github.com/kubeedge/kubeedge/cloud/pkg/common/modules"
 	"github.com/kubeedge/kubeedge/cloud/pkg/devicecontroller/config"
 	"github.com/kubeedge/kubeedge/cloud/pkg/devicecontroller/constants"
 	"github.com/kubeedge/kubeedge/cloud/pkg/devicecontroller/messagelayer"
@@ -35,7 +37,7 @@ import (
 
 // DeviceStatus is structure to patch device status
 type DeviceStatus struct {
-	Status v1alpha1.DeviceStatus `json:"status"`
+	Status v1alpha2.DeviceStatus `json:"status"`
 }
 
 const (
@@ -124,7 +126,7 @@ func (uc *UpstreamController) updateDeviceStatus() {
 				klog.Warningf("Device %s does not exist in downstream controller", deviceID)
 				continue
 			}
-			cacheDevice, ok := device.(*v1alpha1.Device)
+			cacheDevice, ok := device.(*v1alpha2.Device)
 			if !ok {
 				klog.Warning("Failed to assert to CacheDevice type")
 				continue
@@ -133,7 +135,7 @@ func (uc *UpstreamController) updateDeviceStatus() {
 			for twinName, twin := range msgTwin.Twin {
 				for i, cacheTwin := range deviceStatus.Status.Twins {
 					if twinName == cacheTwin.PropertyName && twin.Actual != nil && twin.Actual.Value != nil {
-						reported := v1alpha1.TwinProperty{}
+						reported := v1alpha2.TwinProperty{}
 						reported.Value = *twin.Actual.Value
 						reported.Metadata = make(map[string]string)
 						if twin.Actual.Metadata != nil {
@@ -157,9 +159,28 @@ func (uc *UpstreamController) updateDeviceStatus() {
 				klog.Errorf("Failed to marshal device status %v", deviceStatus)
 				continue
 			}
-			result := uc.crdClient.Patch(MergePatchType).Namespace(cacheDevice.Namespace).Resource(ResourceTypeDevices).Name(deviceID).Body(body).Do()
+			result := uc.crdClient.Patch(MergePatchType).Namespace(cacheDevice.Namespace).Resource(ResourceTypeDevices).Name(deviceID).Body(body).Do(context.Background())
 			if result.Error() != nil {
 				klog.Errorf("Failed to patch device status %v of device %v in namespace %v", deviceStatus, deviceID, cacheDevice.Namespace)
+				continue
+			}
+			//send confirm message to edge twin
+			resMsg := model.NewMessage(msg.GetID())
+			nodeID, err := messagelayer.GetNodeID(msg)
+			if err != nil {
+				klog.Warningf("Message: %s process failure, get node id failed with error: %s", msg.GetID(), err)
+				continue
+			}
+			resource, err := messagelayer.BuildResource(nodeID, "twin", "")
+			if err != nil {
+				klog.Warningf("Message: %s process failure, build message resource failed with error: %s", msg.GetID(), err)
+				continue
+			}
+			resMsg.BuildRouter(modules.DeviceControllerModuleName, constants.GroupTwin, resource, model.ResponseOperation)
+			resMsg.Content = "OK"
+			err = uc.messageLayer.Response(*resMsg)
+			if err != nil {
+				klog.Warningf("Message: %s process failure, response failed with error: %s", msg.GetID(), err)
 				continue
 			}
 			klog.Infof("Message: %s process successfully", msg.GetID())

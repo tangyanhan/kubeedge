@@ -32,7 +32,7 @@ Event object is then passed through the channel.
 - TLS certificates are loaded through the path provided in the context object
 - HTTP server is started with TLS configurations
 - Then HTTP connection is upgraded to websocket connection receiving conn object.
-- ServeConn function the serves all the incoming connections
+- ServeConn function serves all the incoming connections
 
 ### Read message from edge:
 
@@ -60,6 +60,6 @@ Event object is then passed through the channel.
 
 The CloudHub can be configured in three ways as mentioned below :
 
-- **Start the websocket server only**: Click [here](https://github.com/kubeedge/kubeedge/blob/master/docs/proposals/quic-design.md#start-the-websocket-server-only) to see the details.
-- **Start the quic server only**: Click [here](https://github.com/kubeedge/kubeedge/blob/master/docs/proposals/quic-design.md#start-the-quic-server-only) to see the details.
-- **Start the websocket and quic server at the same time**: Click [here](https://github.com/kubeedge/kubeedge/blob/master/docs/proposals/quic-design.md#start-the-quic-server-only) to see the details
+- **Start the websocket server only**: Click [here](/docs/proposals/quic-design.md#start-the-websocket-server-only) to see the details.
+- **Start the quic server only**: Click [here](/docs/proposals/quic-design.md#start-the-quic-server-only) to see the details.
+- **Start the websocket and quic server at the same time**: Click [here](/docs/proposals/quic-design.md#start-the-websocket-and-quic-server-at-the-same-time) to see the details
